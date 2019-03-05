@@ -9,27 +9,38 @@
 
 QT_CHARTS_USE_NAMESPACE
 
-double
-gsl_stats_correlation(const int data1[], const size_t stride1,
-                      const int data2[], const size_t stride2,
-                      const size_t n)
+QVector<int> prepare_ideal_array(const QVector<int>& array) {
+    int min = 60;
+    int max = 80;
+    int ideal_value = 500;
+
+    QVector<int> ideal;
+    ideal.reserve(array.size());
+
+    for(int i = min; i < max; ++i) {
+        ideal[i] = ideal_value;
+    }
+
+    return ideal;
+}
+
+double gsl_stats_correlation(const QVector<int>& data)
 {
-    size_t i;
+    QVector<int> ideal = prepare_ideal_array(data);
+    const int stride1 = 1;
+    const int stride2 = 1;
+
     double sum_xsq = 0.0;
     double sum_ysq = 0.0;
     double sum_cross = 0.0;
-    double ratio;
-    double delta_x, delta_y;
-    double mean_x, mean_y;
-    double r;
 
-    mean_x = data1[0 * stride1];
-    mean_y = data2[0 * stride2];
+    double mean_x = data[0 * stride1];
+    double mean_y = ideal[0 * stride2];
 
-    for(i = 1; i < n; ++i) {
-        ratio = i / (i + 1.0);
-        delta_x = data1[i * stride1] - mean_x;
-        delta_y = data2[i * stride2] - mean_y;
+    for(int i = 1; i < data.size(); ++i) {
+        double ratio = i / (i + 1.0);
+        double delta_x = data[i * stride1] - mean_x;
+        double delta_y = ideal[i * stride2] - mean_y;
         sum_xsq += delta_x * delta_x * ratio;
         sum_ysq += delta_y * delta_y * ratio;
         sum_cross += delta_x * delta_y * ratio;
@@ -37,26 +48,52 @@ gsl_stats_correlation(const int data1[], const size_t stride1,
         mean_y += delta_y / (i + 1.0);
     }
 
-    r = sum_cross / (sqrt(sum_xsq) * sqrt(sum_ysq));
+    double r = sum_cross / (sqrt(sum_xsq) * sqrt(sum_ysq));
 
     return r;
 }
 
 
-QLineSeries* make_series(const QPoint& point1, const QPoint& point2, const QImage& img) {
-    QLineSeries* series = new QLineSeries();
-    int x_counter = 0;
-    int y_counter = point2.x() - point1.x();
+QVector<QVector<int>> get_quad(const QPoint& point1, const QPoint& point2, const QImage& img) {
+    QVector<QVector<int>> quad;
     for(int j = point1.x(); j < point2.x(); ++j) {
-        int average_y = 0;
+        QVector<int> line;
         for(int i = point1.y(); i < point2.y(); ++i) {
             QRgb rgb = img.pixel(j, i);
-            average_y += (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
+            int average_y = (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
+            line.append(average_y);
         }
-        ++x_counter;
-        series->append(x_counter, average_y / y_counter);
+        quad.append(line);
     }
-    return series;
+    return quad;
+}
+
+QPair<QLineSeries*, QLineSeries*> make_series(const QVector<QVector<int>>& quad)
+{
+    QLineSeries *line_horizontal = new QLineSeries();
+    QLineSeries *line_vertical = new QLineSeries();
+
+    line_horizontal->setName("horizontal");
+    line_vertical->setName("vertical");
+
+    for(int i = 0; i < quad.size(); ++i) {
+        int average = 0;
+        for(int j = 0; j < quad[i].size(); ++j) {
+            average += quad[i][j];
+        }
+        line_horizontal->append(i, average / quad[i].size());
+    }
+
+    for(int i = 0; i < quad[i].size(); ++i) {
+        int average = 0;
+
+        for(int j = 0; j < quad.size(); ++j) {
+            average += quad[j][i];
+        }
+        line_vertical->append(i, average / quad.size());
+    }
+
+    return QPair<QLineSeries*, QLineSeries*>(line_horizontal, line_vertical);
 }
 
 
@@ -64,7 +101,7 @@ int main(int argc, char *argv[])
 {
     QImage img;
 
-    qDebug() << "image is loaded:" << img.load("D:\\Develop\\find_points\\imgs\\good_1.png");
+    qDebug() << "image is loaded:" << img.load("C:\\Develop\\qimg_using\\imgs\\good_1.png");
     qDebug() << "height:" << img.height();
     qDebug() << "width:" << img.width();
 
@@ -73,19 +110,31 @@ int main(int argc, char *argv[])
     int height = img.height();
     int width = img.width();
 
-    QLineSeries *s1 = make_series(QPoint(0, 0), QPoint(width / 2, height / 2), img);
-    QLineSeries *s2 = make_series(QPoint(width / 2, 0), QPoint(width, height / 2), img);
-    QLineSeries *s3 = make_series(QPoint(width / 2, height / 2), QPoint(width, height), img);
-    QLineSeries *s4 = make_series(QPoint(0, height / 2), QPoint(width / 2, height), img);
+    auto q1 = get_quad(QPoint(0, 0), QPoint(width / 2, height / 2), img);
+    auto q2 = get_quad(QPoint(width / 2, 0), QPoint(width, height / 2), img);
+    auto q3 = get_quad(QPoint(width / 2, height / 2), QPoint(width, height), img);
+    auto q4 = get_quad(QPoint(0, height / 2), QPoint(width / 2, height), img);
+
+    auto s1 = make_series(q1);
+    auto s2 = make_series(q2);
+    auto s3 = make_series(q3);
+    auto s4 = make_series(q4);
 
     QChart *chart = new QChart();
     chart->legend()->hide();
 
 
-    chart->addSeries(s1);
-    chart->addSeries(s2);
-    chart->addSeries(s3);
-    chart->addSeries(s4);
+    chart->addSeries(s1.first);
+    chart->addSeries(s1.second);
+
+    chart->addSeries(s2.first);
+    chart->addSeries(s2.second);
+
+    chart->addSeries(s3.first);
+    chart->addSeries(s3.second);
+
+    chart->addSeries(s4.first);
+    chart->addSeries(s4.second);
 
 
     chart->createDefaultAxes();
