@@ -2,19 +2,19 @@
 #include <QtWidgets/QMainWindow>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
-#include <QVector>
+#include <vector>
 #include <QImage>
 #include <QDebug>
 #include <exception>
 
 QT_CHARTS_USE_NAMESPACE
 
-QVector<int> prepare_ideal_array(const QVector<int>& array) {
+std::vector<int> prepare_ideal_array(const std::vector<int>& array) {
     int min = 60;
     int max = 80;
     int ideal_value = 500;
 
-    QVector<int> ideal;
+    std::vector<int> ideal;
     ideal.reserve(array.size());
 
     for(int i = min; i < max; ++i) {
@@ -24,9 +24,9 @@ QVector<int> prepare_ideal_array(const QVector<int>& array) {
     return ideal;
 }
 
-double gsl_stats_correlation(const QVector<int>& data)
+double gsl_stats_correlation(const std::vector<int>& data)
 {
-    QVector<int> ideal = prepare_ideal_array(data);
+    std::vector<int> ideal = prepare_ideal_array(data);
     const int stride1 = 1;
     const int stride2 = 1;
 
@@ -53,11 +53,11 @@ double gsl_stats_correlation(const QVector<int>& data)
     return r;
 }
 
-
-QVector<QVector<int>> get_quad(const QPoint& point1, const QPoint& point2, const QImage& img) {
-    QVector<QVector<int>> quad;
+/*
+std::vector<std::vector<int>> get_quad(const QPoint& point1, const QPoint& point2, const QImage& img) {
+    std::vector<std::vector<int>> quad;
     for(int j = point1.x(); j < point2.x(); ++j) {
-        QVector<int> line;
+        std::vector<int> line;
         for(int i = point1.y(); i < point2.y(); ++i) {
             QRgb rgb = img.pixel(j, i);
             int average_y = (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
@@ -67,8 +67,106 @@ QVector<QVector<int>> get_quad(const QPoint& point1, const QPoint& point2, const
     }
     return quad;
 }
+*/
+std::pair<std::vector<int>, std::vector<int>> append_vec(const QImage& img, const int q_num)
+{
+    int minX = 0;
+    int maxX = 0;
+    int minY = 0;
+    int maxY = 0;
 
-QPair<QLineSeries*, QLineSeries*> make_series(const QVector<QVector<int>>& quad)
+    switch (q_num) {
+    case 1:
+        minX = 0;
+        maxX = img.width() / 2;
+        minY = 0;
+        maxY = img.height() / 2;
+        break;
+    case 2:
+        minX = img.width() / 2;
+        maxX = img.width();
+        minY = 0;
+        maxY = img.height() / 2;
+        break;
+    case 3:
+        minX = 0;
+        maxX = img.width() / 2;
+        minY = img.height() / 2;
+        maxY = img.height();
+        break;
+    case 4:
+        minX = img.width() / 2;
+        maxX = img.width();
+        minY = img.height() / 2;
+        maxY = img.height();
+        break;
+    default:
+        break;
+    }
+
+    std::vector<int> result1;
+    for(int x = minX; x < maxX; ++x) {
+        int average = 0;
+        for(int y = minY; y < maxY; ++y) {
+            QRgb rgb = img.pixel(x, y);
+            average += (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
+        }
+        result1.push_back(average / (maxY - minY));
+    }
+
+
+    std::vector<int> result2;
+    for(int x = minY; x < maxY; ++x) {
+        int average = 0;
+        for(int y = minX; y < maxX; ++y) {
+            QRgb rgb = img.pixel(y, x);
+            average += (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
+        }
+        result2.push_back(average / (maxY - minY));
+    }
+
+    if(q_num == 1) {
+        std::reverse(std::begin(result1), std::end(result1));
+        std::reverse(std::begin(result2), std::end(result2));
+    }
+
+    if(q_num == 2) {
+        std::reverse(std::begin(result2), std::end(result2));
+    }
+
+    if(q_num == 3) {
+        std::reverse(std::begin(result1), std::end(result1));
+    }
+
+    return std::pair<std::vector<int>, std::vector<int>>(result1, result2);
+}
+
+typedef struct {
+    std::pair<std::vector<int>, std::vector<int>> fist;
+    std::pair<std::vector<int>, std::vector<int>> secn;
+    std::pair<std::vector<int>, std::vector<int>> thir;
+    std::pair<std::vector<int>, std::vector<int>> four;
+} arrs_t;
+
+arrs_t img2arr(const QImage& img) {
+    int x0 = 0;
+    int x1 = img.width() / 2;
+    int x2 = img.width();
+    int y0 = 0;
+    int y1 = img.height() / 2;
+    int y2 = img.height();
+
+    arrs_t arrs;
+
+    arrs.fist = append_vec(img, 1);
+    arrs.secn = append_vec(img, 2);
+    arrs.thir = append_vec(img, 3);
+    arrs.four = append_vec(img, 4);
+
+    return arrs;
+}
+
+QPair<QLineSeries*, QLineSeries*> make_series(const std::vector<std::vector<int>>& quad)
 {
     QLineSeries *line_horizontal = new QLineSeries();
     QLineSeries *line_vertical = new QLineSeries();
@@ -96,45 +194,53 @@ QPair<QLineSeries*, QLineSeries*> make_series(const QVector<QVector<int>>& quad)
     return QPair<QLineSeries*, QLineSeries*>(line_horizontal, line_vertical);
 }
 
+QLineSeries* make_ser(const std::vector<int>& arr) {
+    auto s = new QLineSeries();
+    for(size_t i = 0; i < arr.size(); ++i) {
+        s->append(i, arr.at(i));
+    }
+    return s;
+}
+
 
 int main(int argc, char *argv[])
 {
     QImage img;
 
-    qDebug() << "image is loaded:" << img.load("C:\\Develop\\qimg_using\\imgs\\good_1.png");
+    qDebug() << "image is loaded:" << img.load(":/imgs/good_0.png");
     qDebug() << "height:" << img.height();
     qDebug() << "width:" << img.width();
 
+    arrs_t arrs = img2arr(img);
+
     QApplication a(argc, argv);
-
-    int height = img.height();
-    int width = img.width();
-
-    auto q1 = get_quad(QPoint(0, 0), QPoint(width / 2, height / 2), img);
-    auto q2 = get_quad(QPoint(width / 2, 0), QPoint(width, height / 2), img);
-    auto q3 = get_quad(QPoint(width / 2, height / 2), QPoint(width, height), img);
-    auto q4 = get_quad(QPoint(0, height / 2), QPoint(width / 2, height), img);
-
-    auto s1 = make_series(q1);
-    auto s2 = make_series(q2);
-    auto s3 = make_series(q3);
-    auto s4 = make_series(q4);
 
     QChart *chart = new QChart();
     chart->legend()->hide();
 
+    auto s1 = make_ser(arrs.fist.first);
+    chart->addSeries(s1);
 
-    chart->addSeries(s1.first);
-    chart->addSeries(s1.second);
+    auto s2 = make_ser(arrs.fist.second);
+    chart->addSeries(s2);
 
-    chart->addSeries(s2.first);
-    chart->addSeries(s2.second);
+    auto s3 = make_ser(arrs.secn.first);
+    chart->addSeries(s3);
 
-    chart->addSeries(s3.first);
-    chart->addSeries(s3.second);
+    auto s4 = make_ser(arrs.secn.second);
+    chart->addSeries(s4);
 
-    chart->addSeries(s4.first);
-    chart->addSeries(s4.second);
+    auto s5 = make_ser(arrs.thir.first);
+    chart->addSeries(s5);
+
+    auto s6 = make_ser(arrs.thir.second);
+    chart->addSeries(s6);
+
+    auto s7 = make_ser(arrs.four.first);
+    chart->addSeries(s7);
+
+    auto s8 = make_ser(arrs.four.second);
+    chart->addSeries(s8);
 
 
     chart->createDefaultAxes();
