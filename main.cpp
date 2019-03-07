@@ -10,14 +10,14 @@
 QT_CHARTS_USE_NAMESPACE
 
 std::vector<int> prepare_ideal_array(const std::vector<int>& array) {
-    int min = 60;
-    int max = 80;
-    int ideal_value = 500;
+    unsigned int min = array.size() * 0;
+    unsigned int max = array.size() / 2;
+    int ideal_value = 1;
 
     std::vector<int> ideal;
     ideal.reserve(array.size());
 
-    for(int i = min; i < max; ++i) {
+    for(unsigned int i = min; i < max; ++i) {
         ideal[i] = ideal_value;
     }
 
@@ -37,7 +37,7 @@ double gsl_stats_correlation(const std::vector<int>& data)
     double mean_x = data[0 * stride1];
     double mean_y = ideal[0 * stride2];
 
-    for(int i = 1; i < data.size(); ++i) {
+    for(unsigned int i = 1; i < data.size(); ++i) {
         double ratio = i / (i + 1.0);
         double delta_x = data[i * stride1] - mean_x;
         double delta_y = ideal[i * stride2] - mean_y;
@@ -53,21 +53,6 @@ double gsl_stats_correlation(const std::vector<int>& data)
     return r;
 }
 
-/*
-std::vector<std::vector<int>> get_quad(const QPoint& point1, const QPoint& point2, const QImage& img) {
-    std::vector<std::vector<int>> quad;
-    for(int j = point1.x(); j < point2.x(); ++j) {
-        std::vector<int> line;
-        for(int i = point1.y(); i < point2.y(); ++i) {
-            QRgb rgb = img.pixel(j, i);
-            int average_y = (qRed(rgb) + qGreen(rgb) + qBlue(rgb)) / 3;
-            line.append(average_y);
-        }
-        quad.append(line);
-    }
-    return quad;
-}
-*/
 std::pair<std::vector<int>, std::vector<int>> append_vec(const QImage& img, const int q_num)
 {
     int minX = 0;
@@ -149,49 +134,12 @@ typedef struct {
 } arrs_t;
 
 arrs_t img2arr(const QImage& img) {
-    int x0 = 0;
-    int x1 = img.width() / 2;
-    int x2 = img.width();
-    int y0 = 0;
-    int y1 = img.height() / 2;
-    int y2 = img.height();
-
     arrs_t arrs;
-
     arrs.fist = append_vec(img, 1);
     arrs.secn = append_vec(img, 2);
     arrs.thir = append_vec(img, 3);
     arrs.four = append_vec(img, 4);
-
     return arrs;
-}
-
-QPair<QLineSeries*, QLineSeries*> make_series(const std::vector<std::vector<int>>& quad)
-{
-    QLineSeries *line_horizontal = new QLineSeries();
-    QLineSeries *line_vertical = new QLineSeries();
-
-    line_horizontal->setName("horizontal");
-    line_vertical->setName("vertical");
-
-    for(int i = 0; i < quad.size(); ++i) {
-        int average = 0;
-        for(int j = 0; j < quad[i].size(); ++j) {
-            average += quad[i][j];
-        }
-        line_horizontal->append(i, average / quad[i].size());
-    }
-
-    for(int i = 0; i < quad[i].size(); ++i) {
-        int average = 0;
-
-        for(int j = 0; j < quad.size(); ++j) {
-            average += quad[j][i];
-        }
-        line_vertical->append(i, average / quad.size());
-    }
-
-    return QPair<QLineSeries*, QLineSeries*>(line_horizontal, line_vertical);
 }
 
 QLineSeries* make_ser(const std::vector<int>& arr) {
@@ -207,11 +155,20 @@ int main(int argc, char *argv[])
 {
     QImage img;
 
-    qDebug() << "image is loaded:" << img.load(":/imgs/good_0.png");
+    qDebug() << "image is loaded:" << img.load(":/imgs/good_5.png");
     qDebug() << "height:" << img.height();
     qDebug() << "width:" << img.width();
 
     arrs_t arrs = img2arr(img);
+
+    qDebug() << gsl_stats_correlation(arrs.fist.first);
+    qDebug() << gsl_stats_correlation(arrs.fist.second);
+    qDebug() << gsl_stats_correlation(arrs.secn.first);
+    qDebug() << gsl_stats_correlation(arrs.secn.second);
+    qDebug() << gsl_stats_correlation(arrs.thir.first);
+    qDebug() << gsl_stats_correlation(arrs.thir.second);
+    qDebug() << gsl_stats_correlation(arrs.four.first);
+    qDebug() << gsl_stats_correlation(arrs.four.second);
 
     QApplication a(argc, argv);
 
