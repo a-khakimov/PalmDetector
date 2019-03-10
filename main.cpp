@@ -3,15 +3,19 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <vector>
+#include <algorithm>
 #include <QImage>
 #include <QDebug>
+#include <QHBoxLayout>
+#include <QSpacerItem>
+#include <QLabel>
 #include <exception>
 
 QT_CHARTS_USE_NAMESPACE
 
 std::vector<int> prepare_ideal_array(const std::vector<int>& array) {
     unsigned int min = array.size() * 0;
-    unsigned int max = array.size() / 2;
+    unsigned int max = array.size() * 0.5;
     int ideal_value = 1;
 
     std::vector<int> ideal;
@@ -155,9 +159,14 @@ int main(int argc, char *argv[])
 {
     QImage img;
 
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_0.png");
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_1.png");
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_2.png");
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_3.png");
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_4.png");
     qDebug() << "image is loaded:" << img.load(":/imgs/good_5.png");
-    qDebug() << "height:" << img.height();
-    qDebug() << "width:" << img.width();
+    //qDebug() << "image is loaded:" << img.load(":/imgs/bad.png");
+    qDebug() << img;
 
     arrs_t arrs = img2arr(img);
 
@@ -170,6 +179,16 @@ int main(int argc, char *argv[])
     qDebug() << gsl_stats_correlation(arrs.four.first);
     qDebug() << gsl_stats_correlation(arrs.four.second);
 
+    qDebug() << *std::max_element(arrs.fist.first.begin(), arrs.fist.first.end());
+    qDebug() << *std::max_element(arrs.fist.second.begin(), arrs.fist.second.end());
+    qDebug() << *std::max_element(arrs.secn.first.begin(), arrs.secn.first.end());
+    qDebug() << *std::max_element(arrs.secn.second.begin(), arrs.secn.second.end());
+    qDebug() << *std::max_element(arrs.thir.first.begin(), arrs.thir.first.end());
+    qDebug() << *std::max_element(arrs.thir.second.begin(), arrs.thir.second.end());
+    qDebug() << *std::max_element(arrs.four.first.begin(), arrs.four.first.end());
+    qDebug() << *std::max_element(arrs.four.second.begin(), arrs.four.second.end());
+
+
     QApplication a(argc, argv);
 
     QChart *chart = new QChart();
@@ -177,25 +196,18 @@ int main(int argc, char *argv[])
 
     auto s1 = make_ser(arrs.fist.first);
     chart->addSeries(s1);
-
     auto s2 = make_ser(arrs.fist.second);
     chart->addSeries(s2);
-
     auto s3 = make_ser(arrs.secn.first);
     chart->addSeries(s3);
-
     auto s4 = make_ser(arrs.secn.second);
     chart->addSeries(s4);
-
     auto s5 = make_ser(arrs.thir.first);
     chart->addSeries(s5);
-
     auto s6 = make_ser(arrs.thir.second);
     chart->addSeries(s6);
-
     auto s7 = make_ser(arrs.four.first);
     chart->addSeries(s7);
-
     auto s8 = make_ser(arrs.four.second);
     chart->addSeries(s8);
 
@@ -205,9 +217,27 @@ int main(int argc, char *argv[])
     QChartView *chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
-    QMainWindow window;
-    window.setCentralWidget(chartView);
-    window.resize(800, 500);
+    QWidget window;
+
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    QVBoxLayout *vlayout = new QVBoxLayout;
+    QLabel* img_label = new QLabel("");
+    img_label->setPixmap(QPixmap::fromImage(img));
+    img_label->adjustSize();
+    vlayout->addWidget(img_label);
+
+    QLabel result("good");
+
+
+    vlayout->addWidget(&result);
+    QSpacerItem verticalSpacer(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    vlayout->addItem(&verticalSpacer);
+    hlayout->addLayout(vlayout);
+
+    hlayout->addWidget(chartView);
+
+    window.setLayout(hlayout);
+    window.resize(1000, 200);
     window.show();
 
     return a.exec();
