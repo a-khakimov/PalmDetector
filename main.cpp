@@ -154,39 +154,64 @@ QLineSeries* make_ser(const std::vector<int>& arr) {
     return s;
 }
 
+std::pair<std::vector<double>, std::vector<int>> get_max_and_corrs(const arrs_t& arrs)
+{
+    std::vector<double> correlation;
+
+    correlation.push_back(gsl_stats_correlation(arrs.fist.first));
+    correlation.push_back(gsl_stats_correlation(arrs.fist.second));
+    correlation.push_back(gsl_stats_correlation(arrs.secn.first));
+    correlation.push_back(gsl_stats_correlation(arrs.secn.second));
+    correlation.push_back(gsl_stats_correlation(arrs.thir.first));
+    correlation.push_back(gsl_stats_correlation(arrs.thir.second));
+    correlation.push_back(gsl_stats_correlation(arrs.four.first));
+    correlation.push_back(gsl_stats_correlation(arrs.four.second));
+
+    std::vector<int> maximums;
+
+    maximums.push_back(*std::max_element(arrs.fist.first.begin(), arrs.fist.first.end()));
+    maximums.push_back(*std::max_element(arrs.fist.second.begin(), arrs.fist.second.end()));
+    maximums.push_back(*std::max_element(arrs.secn.first.begin(), arrs.secn.first.end()));
+    maximums.push_back(*std::max_element(arrs.secn.second.begin(), arrs.secn.second.end()));
+    maximums.push_back(*std::max_element(arrs.thir.first.begin(), arrs.thir.first.end()));
+    maximums.push_back(*std::max_element(arrs.thir.second.begin(), arrs.thir.second.end()));
+    maximums.push_back(*std::max_element(arrs.four.first.begin(), arrs.four.first.end()));
+    maximums.push_back(*std::max_element(arrs.four.second.begin(), arrs.four.second.end()));
+
+    return std::pair<std::vector<double>, std::vector<int>>(correlation, maximums);
+}
+
+bool is_good(const std::vector<double>& correlation, const std::vector<int>& maximums)
+{
+    bool result = true;
+    double min_corr = *std::min_element(correlation.begin(), correlation.end());
+    if(min_corr < 0) {
+        result = false;
+    }
+    double max_val = *std::max_element(maximums.begin(), maximums.end());
+    if(max_val < 30) {
+        result = false;
+    }
+    return result;
+}
 
 int main(int argc, char *argv[])
 {
     QImage img;
 
-    //qDebug() << "image is loaded:" << img.load(":/imgs/good_0.png");
+    qDebug() << "image is loaded:" << img.load(":/imgs/good_0.png");
     //qDebug() << "image is loaded:" << img.load(":/imgs/good_1.png");
     //qDebug() << "image is loaded:" << img.load(":/imgs/good_2.png");
     //qDebug() << "image is loaded:" << img.load(":/imgs/good_3.png");
     //qDebug() << "image is loaded:" << img.load(":/imgs/good_4.png");
-    qDebug() << "image is loaded:" << img.load(":/imgs/good_5.png");
+    //qDebug() << "image is loaded:" << img.load(":/imgs/good_5.png");
     //qDebug() << "image is loaded:" << img.load(":/imgs/bad.png");
     qDebug() << img;
 
     arrs_t arrs = img2arr(img);
 
-    qDebug() << gsl_stats_correlation(arrs.fist.first);
-    qDebug() << gsl_stats_correlation(arrs.fist.second);
-    qDebug() << gsl_stats_correlation(arrs.secn.first);
-    qDebug() << gsl_stats_correlation(arrs.secn.second);
-    qDebug() << gsl_stats_correlation(arrs.thir.first);
-    qDebug() << gsl_stats_correlation(arrs.thir.second);
-    qDebug() << gsl_stats_correlation(arrs.four.first);
-    qDebug() << gsl_stats_correlation(arrs.four.second);
-
-    qDebug() << *std::max_element(arrs.fist.first.begin(), arrs.fist.first.end());
-    qDebug() << *std::max_element(arrs.fist.second.begin(), arrs.fist.second.end());
-    qDebug() << *std::max_element(arrs.secn.first.begin(), arrs.secn.first.end());
-    qDebug() << *std::max_element(arrs.secn.second.begin(), arrs.secn.second.end());
-    qDebug() << *std::max_element(arrs.thir.first.begin(), arrs.thir.first.end());
-    qDebug() << *std::max_element(arrs.thir.second.begin(), arrs.thir.second.end());
-    qDebug() << *std::max_element(arrs.four.first.begin(), arrs.four.first.end());
-    qDebug() << *std::max_element(arrs.four.second.begin(), arrs.four.second.end());
+    auto img_params = get_max_and_corrs(arrs);
+    bool result = is_good(img_params.first, img_params.second);
 
 
     QApplication a(argc, argv);
@@ -226,10 +251,15 @@ int main(int argc, char *argv[])
     img_label->adjustSize();
     vlayout->addWidget(img_label);
 
-    QLabel result("good");
+    QLabel result_label;
+    if(result) {
+        result_label.setText("good");
+    } else {
+        result_label.setText("bad");
+    }
 
 
-    vlayout->addWidget(&result);
+    vlayout->addWidget(&result_label);
     QSpacerItem verticalSpacer(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
     vlayout->addItem(&verticalSpacer);
     hlayout->addLayout(vlayout);
