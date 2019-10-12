@@ -9,21 +9,26 @@
 #include <QHBoxLayout>
 #include <QSpacerItem>
 #include <QLabel>
+#include <QVector>
 #include <exception>
+#include <math.h>
 
 QT_CHARTS_USE_NAMESPACE
 
-std::vector<int> prepare_ideal_array(const std::vector<int>& array) {
-    unsigned int min = array.size() * 0;
-    unsigned int max = array.size() * 0.5;
-    int ideal_value = 1;
+std::vector<int> prepare_ideal_array(const std::vector<int>& array)
+{
+    unsigned long min = static_cast<unsigned long>(array.size() * 0);
+    unsigned long max = static_cast<unsigned long>(array.size() * 0.45);
+    int ideal_value = 100;
 
     std::vector<int> ideal;
-    ideal.reserve(array.size());
+    ideal.resize(array.size());
 
-    for(unsigned int i = min; i < max; ++i) {
+    for(unsigned long i = min; i < max; ++i) {
         ideal[i] = ideal_value;
     }
+
+    //qDebug() << QVector<int>::fromStdVector(ideal);
 
     return ideal;
 }
@@ -38,8 +43,8 @@ double gsl_stats_correlation(const std::vector<int>& data)
     double sum_ysq = 0.0;
     double sum_cross = 0.0;
 
-    double mean_x = data[0 * stride1];
-    double mean_y = ideal[0 * stride2];
+    double mean_x = data[0];
+    double mean_y = ideal[0];
 
     for(unsigned int i = 1; i < data.size(); ++i) {
         double ratio = i / (i + 1.0);
@@ -167,6 +172,8 @@ std::pair<std::vector<double>, std::vector<int>> get_max_and_corrs(const arrs_t&
     correlation.push_back(gsl_stats_correlation(arrs.four.first));
     correlation.push_back(gsl_stats_correlation(arrs.four.second));
 
+    qDebug() << QVector<double>::fromStdVector(correlation);
+
     std::vector<int> maximums;
 
     maximums.push_back(*std::max_element(arrs.fist.first.begin(), arrs.fist.first.end()));
@@ -178,6 +185,8 @@ std::pair<std::vector<double>, std::vector<int>> get_max_and_corrs(const arrs_t&
     maximums.push_back(*std::max_element(arrs.four.first.begin(), arrs.four.first.end()));
     maximums.push_back(*std::max_element(arrs.four.second.begin(), arrs.four.second.end()));
 
+    qDebug() << QVector<int>::fromStdVector(maximums);
+
     return std::pair<std::vector<double>, std::vector<int>>(correlation, maximums);
 }
 
@@ -185,11 +194,13 @@ bool is_good(const std::vector<double>& correlation, const std::vector<int>& max
 {
     bool result = true;
     double min_corr = *std::min_element(correlation.begin(), correlation.end());
-    if(min_corr < 0) {
+    qDebug() << "min_corr:" << min_corr;
+    if (min_corr < 0.5) {
         result = false;
     }
     double max_val = *std::max_element(maximums.begin(), maximums.end());
-    if(max_val < 30) {
+    qDebug() << "max_val:" << max_val;
+    if (max_val < 30) {
         result = false;
     }
     return result;
@@ -236,6 +247,8 @@ int main(int argc, char *argv[])
     auto s8 = make_ser(arrs.four.second);
     chart->addSeries(s8);
 
+    auto s9 = make_ser(img_params.second);
+    chart->addSeries(s9);
 
     chart->createDefaultAxes();
 
