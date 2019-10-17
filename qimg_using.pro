@@ -5,7 +5,13 @@ CONFIG += qt
 QT += charts gui
 
 SOURCES += \
-        main.cpp
+        imageanalyser.cpp \
+        main.cpp \
+        window.cpp
 
 RESOURCES += \
     qrc.qrc
+
+HEADERS += \
+    imageanalyser.h \
+    window.h
