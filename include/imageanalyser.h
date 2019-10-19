@@ -25,7 +25,7 @@ class ImageAnalyser
 
 public:
     ImageAnalyser();
-    ImageAnalyser(const QImage&);
+    explicit ImageAnalyser(const QImage&);
     bool analyze(const QImage&);
     bool analyze();
 

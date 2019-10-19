@@ -5,13 +5,16 @@ CONFIG += qt
 QT += charts gui
 
 SOURCES += \
-        imageanalyser.cpp \
-        main.cpp \
-        window.cpp
+        src/imageanalyser.cpp \
+        src/main.cpp \
+        src/window.cpp
 
 RESOURCES += \
     qrc.qrc
 
+INCLUDEPATH += \
+    include
+
 HEADERS += \
-    imageanalyser.h \
-    window.h
+    include/imageanalyser.h \
+    include/window.h
