@@ -47,9 +47,9 @@ bool ImageAnalyser::is_good(const vector<double>& correlation, const vector<int>
     if (min_corr < 0.5) {
         result = false;
     }
-    double max_val = *std::max_element(maximums.begin(), maximums.end());
-    qDebug() << "max_val:" << max_val;
-    if (max_val < 30) {
+    double min_val = *std::min_element(maximums.begin(), maximums.end());
+    qDebug() << "min_val:" << min_val;
+    if (min_val < 30) {
         result = false;
     }
     return result;

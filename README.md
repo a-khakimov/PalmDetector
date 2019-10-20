@@ -1,2 +1,3 @@
 # PalmDetector
-Util look for points in images
+
+[blog.ainur-khakimov.ru/posts/palmdetector](https://blog.ainur-khakimov.ru/posts/palmdetector)
