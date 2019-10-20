@@ -18,7 +18,7 @@ QLineSeries* make_ser(const std::vector<int>& arr) {
 Window::Window(QObject *parent) : QObject(parent)
 {
     widget = new QWidget();
-    widget->resize(1000, 600);
+    widget->resize(900, 600);
 
     chart = new QChart();
     chartView = new QChartView(chart);
@@ -61,6 +61,11 @@ Window::~Window()
     delete widget;
     delete chartView;
     delete chart;
+    delete hlayout;
+    delete vlayout;
+    delete img_label;
+    delete result_label;
+    delete verticalSpacer;
 }
 
 void Window::redraw(const QString& imgName)
@@ -69,13 +74,21 @@ void Window::redraw(const QString& imgName)
     img.load(":/imgs/" + imgName + ".png");
     bool result = imgAnalyser.analyze(img);
     if (result) {
-        result_label->setText("good");
+        result_label->setText("Good");
     } else {
-        result_label->setText("bad");
+        result_label->setText("Bad");
+    }
+
+    chart->removeAllSeries();
+    auto arrays = imgAnalyser.data();
+    for (auto array : arrays) {
+        QLineSeries* ser = make_ser(array);
+        chart->addSeries(ser);
     }
 
     img_label->setPixmap(QPixmap::fromImage(img));
     img_label->adjustSize();
+    img_label->setAlignment(Qt::AlignTop | Qt::AlignCenter);
 }
 
 void Window::isItemSelected(QListWidgetItem *item)

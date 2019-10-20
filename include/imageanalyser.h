@@ -7,27 +7,25 @@
 
 class ImageAnalyser
 {
-    typedef struct {
-        std::pair<std::vector<int>, std::vector<int>> fist;
-        std::pair<std::vector<int>, std::vector<int>> secn;
-        std::pair<std::vector<int>, std::vector<int>> thir;
-        std::pair<std::vector<int>, std::vector<int>> four;
-    } arrs_t;
+    typedef std::pair<std::vector<int>, std::vector<int>> arr_t;
 
-    arrs_t img2arr(const QImage& img);
+    void img2arr(const QImage& img);
     bool is_good(const std::vector<double>& correlation, const std::vector<int>& maximums);
-    std::pair<std::vector<int>, std::vector<int>> append_vec(const QImage& img, const int q_num);
-    std::pair<std::vector<double>, std::vector<int>> get_max_and_corrs(const arrs_t& arrs);
+    arr_t append_vec(const QImage& img, const int q_num);
+    std::vector<double> get_correlations();
+    std::vector<int> get_maximums();
     std::vector<int> prepare_ideal_array(const std::vector<int>& array);
     double gsl_stats_correlation(const std::vector<int>& data);
 
     QImage image;
+    std::vector<std::vector<int>> arrs;
 
 public:
     ImageAnalyser();
     explicit ImageAnalyser(const QImage&);
     bool analyze(const QImage&);
     bool analyze();
+    std::vector<std::vector<int>> data();
 
     virtual ~ImageAnalyser();
 };

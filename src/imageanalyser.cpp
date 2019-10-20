@@ -2,6 +2,8 @@
 #include <math.h>
 #include <QDebug>
 
+using namespace std;
+
 ImageAnalyser::ImageAnalyser()
 {
 
@@ -9,14 +11,16 @@ ImageAnalyser::ImageAnalyser()
 
 ImageAnalyser::ImageAnalyser(const QImage& img) : image(img)
 {
+
 }
 
 bool ImageAnalyser::analyze(const QImage& img)
 {
     image = img;
-    arrs_t arrs = img2arr(image);
-    auto img_params = get_max_and_corrs(arrs);
-    bool result = is_good(img_params.first, img_params.second);
+    img2arr(image);
+    auto correlaions = get_correlations();
+    auto maximums = get_maximums();
+    bool result = is_good(correlaions, maximums);
     return result;
 }
 
@@ -25,12 +29,17 @@ bool ImageAnalyser::analyze()
     return analyze(image);
 }
 
+std::vector<std::vector<int> > ImageAnalyser::data()
+{
+    return arrs;
+}
+
 ImageAnalyser::~ImageAnalyser()
 {
 
 }
 
-bool ImageAnalyser::is_good(const std::vector<double>& correlation, const std::vector<int>& maximums)
+bool ImageAnalyser::is_good(const vector<double>& correlation, const vector<int>& maximums)
 {
     bool result = true;
     double min_corr = *std::min_element(correlation.begin(), correlation.end());
@@ -47,22 +56,19 @@ bool ImageAnalyser::is_good(const std::vector<double>& correlation, const std::v
 }
 
 
-ImageAnalyser::arrs_t ImageAnalyser::img2arr(const QImage& img)
+void ImageAnalyser::img2arr(const QImage& img)
 {
-    arrs_t arrs;
-    arrs.fist = append_vec(img, 1);
-    arrs.secn = append_vec(img, 2);
-    arrs.thir = append_vec(img, 3);
-    arrs.four = append_vec(img, 4);
-    return arrs;
+    arrs.clear();
+    for (int i = 1; i <= 4; ++i) {
+        arr_t arr = append_vec(img, i);
+        arrs.push_back(arr.first);
+        arrs.push_back(arr.second);
+    }
 }
 
-std::pair<std::vector<int>, std::vector<int>> ImageAnalyser::append_vec(const QImage& img, const int q_num)
+ImageAnalyser::arr_t ImageAnalyser::append_vec(const QImage& img, const int q_num)
 {
-    int minX = 0;
-    int maxX = 0;
-    int minY = 0;
-    int maxY = 0;
+    int minX = 0, maxX = 0, minY = 0, maxY = 0;
 
     switch (q_num) {
     case 1:
@@ -175,33 +181,26 @@ double ImageAnalyser::gsl_stats_correlation(const std::vector<int>& data)
     return r;
 }
 
-std::pair<std::vector<double>, std::vector<int>> ImageAnalyser::get_max_and_corrs(const arrs_t& arrs)
+vector<double> ImageAnalyser::get_correlations()
 {
-    std::vector<double> correlation;
+    std::vector<double> correlations;
 
-    correlation.push_back(gsl_stats_correlation(arrs.fist.first));
-    correlation.push_back(gsl_stats_correlation(arrs.fist.second));
-    correlation.push_back(gsl_stats_correlation(arrs.secn.first));
-    correlation.push_back(gsl_stats_correlation(arrs.secn.second));
-    correlation.push_back(gsl_stats_correlation(arrs.thir.first));
-    correlation.push_back(gsl_stats_correlation(arrs.thir.second));
-    correlation.push_back(gsl_stats_correlation(arrs.four.first));
-    correlation.push_back(gsl_stats_correlation(arrs.four.second));
+    for (auto array : arrs) {
+        auto correlation = gsl_stats_correlation(array);
+        correlations.push_back(correlation);
+    }
 
-    qDebug() << QVector<double>::fromStdVector(correlation);
+    return correlations;
+}
 
+vector<int> ImageAnalyser::get_maximums()
+{
     std::vector<int> maximums;
 
-    maximums.push_back(*std::max_element(arrs.fist.first.begin(), arrs.fist.first.end()));
-    maximums.push_back(*std::max_element(arrs.fist.second.begin(), arrs.fist.second.end()));
-    maximums.push_back(*std::max_element(arrs.secn.first.begin(), arrs.secn.first.end()));
-    maximums.push_back(*std::max_element(arrs.secn.second.begin(), arrs.secn.second.end()));
-    maximums.push_back(*std::max_element(arrs.thir.first.begin(), arrs.thir.first.end()));
-    maximums.push_back(*std::max_element(arrs.thir.second.begin(), arrs.thir.second.end()));
-    maximums.push_back(*std::max_element(arrs.four.first.begin(), arrs.four.first.end()));
-    maximums.push_back(*std::max_element(arrs.four.second.begin(), arrs.four.second.end()));
+    for (auto array : arrs) {
+        int maximum = *std::max_element(array.begin(), array.end());
+        maximums.push_back(maximum);
+    }
 
-    qDebug() << QVector<int>::fromStdVector(maximums);
-
-    return std::pair<std::vector<double>, std::vector<int>>(correlation, maximums);
+    return maximums;
 }
