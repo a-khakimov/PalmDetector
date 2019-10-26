@@ -99,8 +99,10 @@ ImageAnalyser::arr_t ImageAnalyser::append_vec(const QImage& img, const int q_nu
         break;
     }
 
+    const unsigned int step = 10;
+
     std::vector<int> result1;
-    for (int x = minX; x < maxX; ++x) {
+    for (int x = minX; x < maxX; x += step) {
         int average = 0;
         for (int y = minY; y < maxY; ++y) {
             QRgb rgb = img.pixel(x, y);
@@ -111,7 +113,7 @@ ImageAnalyser::arr_t ImageAnalyser::append_vec(const QImage& img, const int q_nu
 
 
     std::vector<int> result2;
-    for (int x = minY; x < maxY; ++x) {
+    for (int x = minY; x < maxY; x += step) {
         int average = 0;
         for (int y = minX; y < maxX; ++y) {
             QRgb rgb = img.pixel(y, x);
